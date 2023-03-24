@@ -1,5 +1,5 @@
 ---
-title: "DATA-413/613 HW 3: Lists and Iteration"
+title: "Lists and Iterations"
 author: "Evan Bowman"
 date: "`r Sys.Date()`"
 output:
@@ -7,9 +7,12 @@ output:
     number_sections: yes
     toc: no
     toc_depth: 4
-urlcolor: "blue"
+  pdf_document:
+    toc: no
+    toc_depth: '4'
+urlcolor: blue
 params:
-  solutions: TRUE
+  solutions: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -22,53 +25,8 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Instructions {.unnumbered}
 
-1.  Clone this homework repo to your homework directory as a new repo.
-2.  Rename the starter file under the analysis directory as `hw_03_yourname.Rmd` and use it for your solutions.\
-3.  Modify the "author" field in the YAML header.\
-4.  Stage and Commit R Markdown and HTML files (no PDF files).\
-5.  **Push both .Rmd and HTML files to GitHub**.\
-
--   Make sure you have knitted to HTML prior to staging, committing, and pushing your final submission.\
-
-6.  **Commit each time you answer a part of question, e.g. 1.1**\
-7.  **Push to GitHub after each major question**\
-8.  When complete, submit a response in Canvas
-
--   Only include necessary code to answer the questions.
-
--   Most of the functions you use should be from the tidyverse. Too much base R will result in point deductions.
-
--   Use Pull requests and or email to ask me any questions. If you email, please ensure your most recent code is pushed to GitHub.
-
--   **Learning Outcomes**:
-
-    -   Manipulate vectors in base-R syntax.
-    -   Apply iterations with for loops.
-
-# Grading Rubric {.unnumbered}
-
-| Question.Part: | Points | Topic                                          |
-|----------------|--------|------------------------------------------------|
-| 1.1            | 1.00   | Load the Data                                  |
-| 1.2            | 1.00   | Correct length and Names                       |
-| 1.3            | 1.00   | Values are Removed from the list               |
-| 1.4            | 2.00   | Correct Posterior Mean added to scores         |
-| 1.5            | 2.00   | Correct Column Means added to list             |
-| 1.6            | 2.00   | Extracted values are correct                   |
-| 2.1a           | 2.00   | Proper Function structure                      |
-| 2.1a           | 3.00   | Complete Error checks                          |
-| 2.1b           | 1.00   | Correct Output                                 |
-| 3.1            | 1.00   | Single function with Element names and types   |
-| 3.2            | 3.00   | For Loop is initialized and operates correctly |
-| 3.3            | 3.00   | Correct map output and Plot                    |
-| 3.4            | 1.50   | Correct Output for pvec_f                      |
-| 3.5            | 1.50   | Correct Output for pvec_m                      |
-| 3.6            | 1.00   | Extra Credit                                   |
-| **Total**      | **25** | plus 1 pt Extra Credit                         |
-
-```{r}
+```{r, include=FALSE}
 library(tidyverse)
 ```
 
@@ -102,8 +60,6 @@ names(fitPoly)
 
 4.  The `scores` element contains the output most users would want. The variables in `scores` called `P0`, `P1`, `P2`, `P3`, `P4`, `P5`, and `P6` contain "posterior probabilities" for each individual for values `0`, `1`, `2`, `3`, `4`, `5`, and `6` (respectively).\
 
--   A quantity useful in Bayesian analysis is called the "posterior mean" which in this case is calculated as follows:
-    -   $\text{posterior_mean] = (P0 * 0) + (P1 * 1) + (P2 * 2) + (P3 * 3) + (P4 * 4) + (P5 * 5) + (P6 * 6)$.
 -   Calculate the posterior mean for each individual and add this as a new variable in the `scores` data frame.
 
 ```{r}
@@ -172,7 +128,7 @@ In words, element $n$ is the sum of element $n-1$ and the absolute value of the 
 ```{r}
 calcn <- function(x, n) {
   stopifnot(length(x) == 3 & is.numeric(x))
-  stopifnot(n > 0 & is.numeric(n))
+  stopifnot(n > 0 & is.integer(n))
   
 nums <- vector(mode = "integer", length = n)
 for (i in seq_along(nums)) {
@@ -184,17 +140,6 @@ for (i in seq_along(nums)) {
 }
   return(nums[n])
 }
-```
-
-For example, in my implementation of `calcn()`, I obtained the following:
-
-```{r}
-# From Homework Document
-calcn(x = c(2, 4, 3), n = 3L)
-calcn(x = c(2, 4, 3), n = 4L)
-calcn(x = c(2, 4, 3), n = 5L)
-calcn(x = c(2, 4, 3), n = 6L)
-calcn(x = c(2, 4, 3), n = 7L)
 ```
 
 -   **Evaluate your function at the following inputs**:
@@ -267,10 +212,3 @@ pvec_m <- tlist %>%
   map_dbl(~ .$p.value)
 head(pvec_m)
 ```
-
-6.  *Extra Credit* $p$-values have a nice property where, if the null hypothesis is true (i.e., the mean of the observations is actually 0), then the $p$-values follow the uniform distribution.
-
--   Use the data from `pvec_m` to create a [QQ-plot](https://en.wikipedia.org/wiki/Q–Q_plot) and then interpret the plot with regard to whether the $p$-values exhibit a uniform distribution.\
--   Ensure your plot has appropriate labels for the axes and a title.
--   Include an abline that is dashed and colored red.
-
