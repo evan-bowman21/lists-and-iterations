@@ -1,0 +1,276 @@
+---
+title: "DATA-413/613 HW 3: Lists and Iteration"
+author: "Evan Bowman"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    number_sections: yes
+    toc: no
+    toc_depth: 4
+urlcolor: "blue"
+params:
+  solutions: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = params$solutions,
+  eval = params$solutions,
+  fig.align = "center",
+  fig.height = 3,
+  fig.width = 5
+)
+```
+
+# Instructions {.unnumbered}
+
+1.  Clone this homework repo to your homework directory as a new repo.
+2.  Rename the starter file under the analysis directory as `hw_03_yourname.Rmd` and use it for your solutions.\
+3.  Modify the "author" field in the YAML header.\
+4.  Stage and Commit R Markdown and HTML files (no PDF files).\
+5.  **Push both .Rmd and HTML files to GitHub**.\
+
+-   Make sure you have knitted to HTML prior to staging, committing, and pushing your final submission.\
+
+6.  **Commit each time you answer a part of question, e.g. 1.1**\
+7.  **Push to GitHub after each major question**\
+8.  When complete, submit a response in Canvas
+
+-   Only include necessary code to answer the questions.
+
+-   Most of the functions you use should be from the tidyverse. Too much base R will result in point deductions.
+
+-   Use Pull requests and or email to ask me any questions. If you email, please ensure your most recent code is pushed to GitHub.
+
+-   **Learning Outcomes**:
+
+    -   Manipulate vectors in base-R syntax.
+    -   Apply iterations with for loops.
+
+# Grading Rubric {.unnumbered}
+
+| Question.Part: | Points | Topic                                          |
+|----------------|--------|------------------------------------------------|
+| 1.1            | 1.00   | Load the Data                                  |
+| 1.2            | 1.00   | Correct length and Names                       |
+| 1.3            | 1.00   | Values are Removed from the list               |
+| 1.4            | 2.00   | Correct Posterior Mean added to scores         |
+| 1.5            | 2.00   | Correct Column Means added to list             |
+| 1.6            | 2.00   | Extracted values are correct                   |
+| 2.1a           | 2.00   | Proper Function structure                      |
+| 2.1a           | 3.00   | Complete Error checks                          |
+| 2.1b           | 1.00   | Correct Output                                 |
+| 3.1            | 1.00   | Single function with Element names and types   |
+| 3.2            | 3.00   | For Loop is initialized and operates correctly |
+| 3.3            | 3.00   | Correct map output and Plot                    |
+| 3.4            | 1.50   | Correct Output for pvec_f                      |
+| 3.5            | 1.50   | Correct Output for pvec_m                      |
+| 3.6            | 1.00   | Extra Credit                                   |
+| **Total**      | **25** | plus 1 pt Extra Credit                         |
+
+```{r}
+library(tidyverse)
+```
+
+# Working with Lists
+
+Because of their generality, lists (or list-like objects) are often the output of many statistical procedures in R. The file `fpout.RDS` in the data folder contains sample output from using [fitPoly](https://cran.r-project.org/package=fitPoly), a statistical method to quantify properties of locations on the [genome](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5915555/).
+
+1.  Use `read_rds()` and a relative path to read this data into R.
+
+```{r}
+fitPoly <- read_rds("../data/fpout.RDS")
+```
+
+2.  Use appropriate functions to obtain the length of the list and then the vector of the names of the elements in the list.
+
+```{r}
+# Length of List
+length(fitPoly)
+
+# Vector of names of the elements
+names(fitPoly)
+```
+
+3.  The `diploscores` element does not provide any information. Remove it from the list in one step.
+
+```{r}
+fitPoly <- fitPoly[-5]
+
+names(fitPoly)
+```
+
+4.  The `scores` element contains the output most users would want. The variables in `scores` called `P0`, `P1`, `P2`, `P3`, `P4`, `P5`, and `P6` contain "posterior probabilities" for each individual for values `0`, `1`, `2`, `3`, `4`, `5`, and `6` (respectively).\
+
+-   A quantity useful in Bayesian analysis is called the "posterior mean" which in this case is calculated as follows:
+    -   $\text{posterior_mean] = (P0 * 0) + (P1 * 1) + (P2 * 2) + (P3 * 3) + (P4 * 4) + (P5 * 5) + (P6 * 6)$.
+-   Calculate the posterior mean for each individual and add this as a new variable in the `scores` data frame.
+
+```{r}
+fitPoly$scores <- fitPoly$scores %>%
+  mutate(posterior_mean = (P0 * 0) + (P1 * 1) + (P2 * 2) + (P3 * 3) + (P4 * 4) + (P5 * 5) + (P6 * 6), .after = P6)
+head(fitPoly$scores)
+```
+
+5.  Operating on elements within a list.
+
+-   Use a {purrr} function to identify the names of the columns/variables in the `scores` data frame that are *not* of type double.\
+
+```{r}
+names(keep(fitPoly$scores, ~ !is_double(.)))
+```
+
+-   Add a new atomic vector element called `col_means` **to the list** that contains just the column means of all the *double* variables in the `scores` data frame.
+
+```{r}
+fitPoly$score_col_means <- map_dbl(fitPoly$scores[-1:-3], mean, na.rm = T)
+fitPoly$score_col_means
+
+```
+
+6.  Extract elements from a list. 
+
+-   Demonstrate three different ways to extract the `col_means` element from the list. The extracted element must *not be a list*.
+
+```{r}
+# 1st Method: Extracting with $
+fitPoly$score_col_means
+typeof(fitPoly$score_col_means)
+
+# 2nd Method: Extract using [[list_number]]
+fitPoly[[7]]
+typeof(fitPoly[[7]])
+
+#3rd Method: pluck function
+pluck(fitPoly, "score_col_means")
+typeof(pluck(fitPoly, "score_col_means"))
+```
+
+-   Show two ways to extract the third element of `col_means`
+
+```{r}
+# 1st Method: Extracting with both $ and []
+fitPoly$score_col_means[3]
+typeof(fitPoly$score_col_means[3])
+
+# 2nd Method: Pluck function
+pluck(fitPoly, "score_col_means", 3)
+typeof(pluck(fitPoly, "score_col_means", 3))
+```
+
+# For Loops
+
+Consider the recursive sequence defined by $$x_n = x_{n-1} + \frac{|x_{n-3} - x_{n-2}|}{4}.$$ 
+In words, element $n$ is the sum of element $n-1$ and the absolute value of the difference between between elements $n-3$ and $n-2$, divided by four. For example, if we let $x_1 = 3$, $x_2 = 1$, and $x_3 = 10$, then $x_4$ is $$ x_4 = 10 + \frac{|3 - 1|}{4} = 10.5.$$
+
+1.  Write a function called `calcn()` that takes as input a vector `x` with the first three elements of this sequence ($x_1$, $x_2$, $x_3$) and an integer `n` denoting the final element of the sequence to calculate.\
+
+-   `calcn(x, n)` should return the value of the `n`^th^ element.
+-   Include error checking to ensure both inputs are of the correct length and class and `n` is greater than 0.
+
+
+```{r}
+calcn <- function(x, n) {
+  stopifnot(length(x) == 3 & is.numeric(x))
+  stopifnot(n > 0 & is.numeric(n))
+  
+nums <- vector(mode = "integer", length = n)
+for (i in seq_along(nums)) {
+  if (i <= 3) {
+    nums[i] <- x[i]
+} else {
+  nums[i] <- nums[i-1] + ((abs(nums[i-3] - nums[i-2])) / 4)
+  }
+}
+  return(nums[n])
+}
+```
+
+For example, in my implementation of `calcn()`, I obtained the following:
+
+```{r}
+# From Homework Document
+calcn(x = c(2, 4, 3), n = 3L)
+calcn(x = c(2, 4, 3), n = 4L)
+calcn(x = c(2, 4, 3), n = 5L)
+calcn(x = c(2, 4, 3), n = 6L)
+calcn(x = c(2, 4, 3), n = 7L)
+```
+
+-   **Evaluate your function at the following inputs**:
+
+```{r}
+calcn(c(11, 1, 130), 1000L)  
+calcn(c(11, 1, 130), 1L)  
+calcn(c(7, 3, 20), 8L)  
+```
+
+# Question: Lists, For-loops, and `map_*()`
+
+Lists are often used to save simulation output. You can then extract individual elements from the lists using for-loops.
+
+Consider the $t$-test, often used to test whether or not the true mean of a population for some observations is 0. We can use the following code to simulate data from a [Normal (0,1) distribution](https://en.wikipedia.org/wiki/Normal_distribution), and then use a $t$-test to test if the true mean is 0:
+
+```{r}
+set.seed(123)
+x <- rnorm(n = 10, mean = 0, sd = 1)
+tout <- t.test(x)
+```
+
+1.  The output of `t.test()` is a list-like object. Use one function to show how many elements are in the list along with their names and class.
+```{r}
+str(tout)
+```
+
+2.  Write a for-loop to perform the following three operations on iteration `i`:  
+
+    1.  Draw 10 random observations from a normal distribution with mean 0 and standard deviation 2.
+    2.  Run a $t$-test on these 10 observations.
+    3.  Save the output of the $t$-test as the `i`th element in a list called `tlist`.  
+
+-   Set the seed to 1 and run for 1000 iterations.
+```{r}
+set.seed(1)
+tlist <- vector(mode = "list", length = 1000)
+for (i in 1:1000) {
+ x <- rnorm(10, mean = 0, sd = 2)
+ tout <- t.test(x)
+ tlist[[i]] <- tout
+}
+```
+
+3.  Use the appropriate `purrr:map_*` function to extract the sample mean from each test (from 2) and pipe to an appropriate plot to show the sampling distribution of the sample mean.
+-   Hint: Make sure the data going into ggplot is a data frame (tibble)
+```{r}
+tlist %>%
+map_dbl(~.$estimate[[1]]) %>%
+  tibble(mean=.) %>%
+  ggplot(aes(x = mean))+
+  geom_histogram(bins = 70) +
+  ggthemes::theme_fivethirtyeight()+
+  ggtitle("Distribution of Sample Means")
+```
+
+
+4.  The $p$-value is an important quantity in statistics. Use a for-loop to extract the $p$-values from each test in part 2 and combine these $p$-values into a single atomic vector called `pvec_f`. Show the first 6 values.
+```{r}
+pvec_f <- vector(mode = "double", length = 1000)
+for (i in 1:1000) {
+  pvec_f[[i]] <- tlist[[i]]$p.value
+}
+head(pvec_f)
+```
+
+5.  Use the appropriate `purrr:map_*` function to extract the $p$-values from each test in part 2 and combine these $p$-values into a single atomic vector called `pvec_m`. Show the first 6 values.
+```{r}
+pvec_m <- tlist %>%
+  map_dbl(~ .$p.value)
+head(pvec_m)
+```
+
+6.  *Extra Credit* $p$-values have a nice property where, if the null hypothesis is true (i.e., the mean of the observations is actually 0), then the $p$-values follow the uniform distribution.
+
+-   Use the data from `pvec_m` to create a [QQ-plot](https://en.wikipedia.org/wiki/Q–Q_plot) and then interpret the plot with regard to whether the $p$-values exhibit a uniform distribution.\
+-   Ensure your plot has appropriate labels for the axes and a title.
+-   Include an abline that is dashed and colored red.
+
